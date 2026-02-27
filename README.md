@@ -183,7 +183,11 @@ python visualize_episodes.py --dataset_dir /path/to/pour_water_data/optimized --
 
 Example training loss curve:
 
-![loss](static/image.png)
+![loss](static/loss_curve.png)
+
+Real-robot demo video:
+
+- [pour_water_demo.mov](static/pour_water_demo.mov)
 
 ## Repository layout (partial)
 

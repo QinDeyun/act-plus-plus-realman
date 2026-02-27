@@ -143,6 +143,6 @@ ckpts/
 *log*
 
 *.png
-!static/image.png
+!static/loss_curve.png
 *.npy
 play.ipynb
