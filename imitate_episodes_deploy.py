@@ -1,4 +1,3 @@
-# python3 imitate_episodes.py --task_name pour_water --ckpt_dir ckpt_dir_4_23 --policy_class ACT --kl_weight 10 --chunk_size 50 --hidden_dim 512 --batch_size 128 --dim_feedforward 3200 --num_steps 20000  --lr 8e-4 --seed 0 --eval_every 30000
 import torch
 import numpy as np
 import os
@@ -236,11 +235,14 @@ def get_image(ts, camera_names, rand_crop_resize=False):
 
 start_collect = False
 stop_threads = False
-# 创建一个队列来存放状态量
+arm = None
+# Queues for passing latest sensor readings (single-item semantics).
 frame_queue = queue.Queue()
 pos_queue = queue.Queue()
+
+
 def get_frames():
-    # 初始化RealSense管道
+    # Initialize RealSense pipeline.
     pipeline = rs.pipeline()
     config = rs.config()
     config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
@@ -252,24 +254,24 @@ def get_frames():
                 if stop_threads:
                     break
 
-                # 等待新的一帧图像
+                # Wait for the next RGB frame.
                 frames = pipeline.wait_for_frames()
                 color_frame = frames.get_color_frame()
 
                 while not frame_queue.empty():
                     frame_queue.get()
-                # 将图像数据放入队列
+                # Push latest frame to the queue.
                 frame_queue.put(color_frame)
 
-                _, current_info= arm.rm_get_current_arm_state()
-                current_joints =current_info['joint']
+                _, current_info = arm.rm_get_current_arm_state()
+                current_joints = current_info['joint']
                 # print(current_joints)
                 while not pos_queue.empty():
                     pos_queue.get()
-                # 将关节角放入队列
+                # Push latest joints to the queue.
                 pos_queue.put(current_joints)
 
-                time.sleep(0.02)  # 加延时以减缓循环
+                time.sleep(0.02)  # Add a small delay to reduce CPU usage.
             
     finally:
         pipeline.stop()
@@ -379,29 +381,32 @@ def eval_bc(config, ckpt_name, save_episode=True, num_rollouts=50):
         elif 'sim_insertion' in task_name:
             BOX_POSE[0] = np.concatenate(sample_insertion_pose()) # used in sim reset
 
-        # 控制机械臂移动到初始位置
+        # Move the robot to the initial pose.
         # ts = env.reset()
-        # 实例化RoboticArm类
+        # Instantiate RoboticArm.
+        global arm
         arm = RoboticArm(rm_thread_mode_e.RM_TRIPLE_MODE_E)
-        # 创建机械臂连接，打印连接id
+        # Create robot connection (returns a handle).
         handle = arm.rm_create_robot_arm("192.168.1.18", 8080)
-        # 高4厘米
-        arm.rm_movel([-0.023, -0.18, 0.321, -1.85, -1.143, 1.587], 5, 0, 0, 1)
-        # 机械臂移动到合适的位置（抓紧水壶）
-        arm.rm_movej([-9.262, 58.873, -85.67, 114.3, -40.46, 57.919, 314.559], 5, 0, 0, 1)
         
-        # 创建并启动获取图像的线程
+        # Move to initial position from the end of the previous episode
+        # Move up 4 cm.
+        arm.rm_movel([-0.023, -0.18, 0.321, -1.85, -1.143, 1.587], 5, 0, 0, 1)
+        # Move the arm to a suitable pose.
+        arm.rm_movej([-9.262, 58.873, -85.67, 114.3, -40.46, 57.919, 314.559], 5, 0, 0, 1)
+
+        # Start frame producer thread.
         frame_thread = threading.Thread(target=get_frames)
         frame_thread.daemon = True
         frame_thread.start()
 
         time.sleep(3)
 
-        # 从队列获取图像帧
+        # Read one frame from the queue.
         if not frame_queue.empty():
             color_frame = frame_queue.get()
             if color_frame:
-                # 转换图像为numpy数组处理
+            # Convert frame to numpy array.
                 img = np.asanyarray(color_frame.get_data())
         ### onscreen render
         if onscreen_render:
@@ -428,14 +433,14 @@ def eval_bc(config, ckpt_name, save_episode=True, num_rollouts=50):
             for t in range(max_timesteps):
                 time1 = time.time()
 
-                # 从队列获取图像帧
+                # Read frame from the queue.
                 if not frame_queue.empty():
                     color_frame = frame_queue.get()
                     if color_frame:
-                        # 转换图像为numpy数组处理
+                        # Convert frame to numpy array.
                         img = np.asanyarray(color_frame.get_data())
                 
-                # 从队列获取关节角
+                # Read joints from the queue.
                 if not pos_queue.empty():
                     pos = pos_queue.get()
 
@@ -551,7 +556,7 @@ def eval_bc(config, ckpt_name, save_episode=True, num_rollouts=50):
                 time5 = time.time()
                 if real_robot:
                     # ts = env.step(target_qpos, base_action)
-                    # TODO: 测试关节角度透传
+                    # TODO: Verify joint command passthrough.
                     print(arm.rm_movej_canfd(target_qpos, True, 0, 0, 0))
                 else:
                     ts = env.step(target_qpos)
