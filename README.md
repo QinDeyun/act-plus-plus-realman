@@ -187,7 +187,7 @@ Example training loss curve:
 
 Real-robot demo video:
 
-- [pour_water_demo.mov](static/pour_water_demo.mov)
+- [pour_water_demo.mov](static/pour_water_demo.mov) or [XiaoHongShu link](https://www.xiaohongshu.com/explore/680ee524000000002301789c?xsec_token=ABmqME_gFQV5QRZBHRW5_JGhXiwPrmwpHbw13NOrgrQIM=&xsec_source=pc_user)
 
 ## Repository layout (partial)
 
