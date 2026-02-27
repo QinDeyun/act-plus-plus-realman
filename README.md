@@ -1,6 +1,6 @@
 # act-plus-plus-realman
 
-This repository extends **act-plus-plus** with real-world support for **Realman robotic arms**, providing an end-to-end pipeline for **real-robot data collection → dataset post-processing → policy training (ACT / Diffusion / VINN) → real-robot deployment/inference**.
+This repository extends **[act-plus-plus](https://github.com/MarkFzp/act-plus-plus)** with real-world support for **[Realman robotic arms](https://www.realman-robotics.cn/products/rmo)**, providing an end-to-end pipeline for **real-robot data collection → dataset post-processing → policy training (ACT / Diffusion / VINN) → real-robot deployment/inference**.
 
 > Note: This repo contains both simulation-related code and real-robot code. The real-robot stack depends on the Realman arm SDK (`Robotic_Arm.rm_robot_interface`) and Intel RealSense (`pyrealsense2`), which you must install locally.
 
@@ -202,6 +202,4 @@ Example training loss curve:
 
 ## Acknowledgements
 
-This repository is built on top of the ideas and code structure from act-plus-plus. Thanks to the original authors and community.
-
-- Upstream project: https://github.com/MarkFzp/act-plus-plus
+This repository is built on top of the ideas and code structure from [act-plus-plus](https://github.com/MarkFzp/act-plus-plus). Thanks to the original authors and community.

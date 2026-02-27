@@ -143,5 +143,6 @@ ckpts/
 *log*
 
 *.png
+!static/image.png
 *.npy
 play.ipynb
